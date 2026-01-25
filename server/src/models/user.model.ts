@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { IUser } from "../types/user.js";
+import { IUser } from "../types/schema.js";
 
 const userSchema = new mongoose.Schema<IUser>(
   {
@@ -23,8 +23,6 @@ const userSchema = new mongoose.Schema<IUser>(
       required: true,
       default: false,
     },
-    otp: String,
-    otpExpiresAt: Date,
   },
   { timestamps: true }
 );

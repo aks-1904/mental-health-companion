@@ -1,4 +1,4 @@
-import { IUser } from "./user.js";
+import { IUser } from "./schema.js";
 
 interface BaseAuthResponse {
   success: boolean;
@@ -14,3 +14,9 @@ export interface RegisterRequestData {
   password: string;
   name: string;
 }
+
+export type SendEmailParams = {
+  to: string;
+  subject: string;
+  html: string;
+};

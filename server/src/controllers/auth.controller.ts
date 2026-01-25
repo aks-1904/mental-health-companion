@@ -5,11 +5,11 @@ import User from "../models/user.model.js";
 import { validateEmail, validateName } from "../utils/validators.js";
 import { generateOtp } from "../utils/generators.js";
 import { generateDate, hashText } from "../utils/util.js";
+import EmailVerification from "../models/emailVerfication.model.js";
+import { sendEmail } from "../services/email.service.js";
+import { verifyEmailTemplate } from "../emails/verify-mail.js";
 
-const OTP_EXPIRING_TIME = process.env.OTP_EXPIRING_TIME;
-if (!OTP_EXPIRING_TIME || Number.isFinite(+OTP_EXPIRING_TIME)) {
-  throw new Error("OTP expiring time not given or invalid otp expiring time");
-}
+const OTP_EXPIRING_TIME = 10; // In minutes
 
 export const register = async (
   req: Request,
@@ -44,8 +44,8 @@ export const register = async (
     }
 
     // Checking if user is exist for this email
-    const user = await User.findOne({ email });
-    if (!user) {
+    let user = await User.findOne({ email });
+    if (user) {
       // Conflict - User already exist
       return res.status(409).json({
         success: false,
@@ -54,21 +54,32 @@ export const register = async (
     }
 
     const otp = generateOtp(6); // Generating OTP of length 6
+    const otpHash = await hashText(otp);
     const passwordHash = await hashText(password); // Hashing the password before saving to DB
-    const otpExpiresDate = generateDate(new Date(), +OTP_EXPIRING_TIME); // Generate Date after 10 minutes from now
+    const otpExpiresDate = generateDate(new Date(), Number(OTP_EXPIRING_TIME)); // Generate Date after 10 minutes from now
 
     // Saving data in DB
-    await User.create({
+    user = await User.create({
       email,
       passwordHash,
-      otp,
-      otpExpiresAt: otpExpiresDate,
       name,
     });
 
-    // Sending OTP to user using mailtrap
+    // Sending verification message
+    await EmailVerification.deleteMany({ userId: user?._id as any }); // Deleting every other email verification document with same userId
+    await EmailVerification.create({
+      userId: user?._id as any,
+      otpHash,
+      expiresAt: otpExpiresDate,
+    });
 
-    return res.status(200).json({
+    await sendEmail({
+      to: email,
+      subject: "Verify your email",
+      html: verifyEmailTemplate(otp, name),
+    });
+
+    return res.status(201).json({
       success: true,
       message: "Verification email sended",
     });
