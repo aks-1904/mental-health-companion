@@ -5,7 +5,11 @@ interface BaseAuthResponse {
   message: string;
 }
 
-export interface RegisterAuthResponse extends BaseAuthResponse {
+export interface RegisterResponse {
+  userId?: string;
+}
+
+export interface VerifyEmailResponse extends BaseAuthResponse {
   profile?: IUser;
 }
 

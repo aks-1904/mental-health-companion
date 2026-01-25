@@ -1,10 +1,14 @@
 import { Request, Response } from "express";
 import { printError } from "../utils/dev.js";
-import { RegisterAuthResponse, RegisterRequestData } from "../types/data.js";
+import {
+  RegisterResponse,
+  RegisterRequestData,
+  VerifyEmailResponse,
+} from "../types/data.js";
 import User from "../models/user.model.js";
 import { validateEmail, validateName } from "../utils/validators.js";
 import { generateOtp } from "../utils/generators.js";
-import { generateDate, hashText } from "../utils/util.js";
+import { compareHashedString, generateDate, hashText } from "../utils/util.js";
 import EmailVerification from "../models/emailVerfication.model.js";
 import { sendEmail } from "../services/email.service.js";
 import { verifyEmailTemplate } from "../emails/verify-mail.js";
@@ -14,7 +18,7 @@ const OTP_EXPIRING_TIME = 10; // In minutes
 export const register = async (
   req: Request,
   res: Response
-): Promise<Response<RegisterAuthResponse>> => {
+): Promise<Response<RegisterResponse>> => {
   try {
     const { email, password, name }: RegisterRequestData = req.body;
 
@@ -82,12 +86,78 @@ export const register = async (
     return res.status(201).json({
       success: true,
       message: "Verification email sended",
+      userId: user?._id,
     });
   } catch (error: any) {
     printError(error);
     return res.status(500).json({
       success: false,
       message: error?.message || "Failed to create your account",
+    });
+  }
+};
+
+export const verifyEmail = async (
+  req: Request,
+  res: Response
+): Promise<Response<VerifyEmailResponse>> => {
+  try {
+    const { otp, userId } = req.body;
+
+    const record = await EmailVerification.findOne({ userId });
+
+    // Checking if record is available
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP not found",
+      });
+    }
+
+    if (record.expiresAt < new Date()) {
+      // OTP expires
+      return res.status(400).json({
+        success: false,
+        message: "Expired OTP, request for another one",
+      });
+    }
+
+    if ((record.attempts as number) > 5) {
+      // Maximum 5 request allowed
+      return res.status(429).json({
+        success: false,
+        message: "Too many attempts",
+      });
+    }
+
+    const isValid = await compareHashedString(otp, record.otpHash as string);
+    if (!isValid) {
+      // OTP given is not valid
+      record.attempts += 1 as any;
+      await record.save();
+
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    // Updating user in database
+    await User.findByIdAndUpdate(userId, {
+      verified: true,
+    });
+    // Deleting email verification document
+    await EmailVerification.deleteOne({ _id: record?._id });
+
+    return res.status(200).json({
+      success: true,
+      message: "Account verified successfully",
+    });
+  } catch (error: any) {
+    printError(error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Failed to verify you email",
     });
   }
 };
