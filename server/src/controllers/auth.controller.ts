@@ -1,4 +1,5 @@
 import { CookieOptions, Request, Response } from "express";
+import { Types } from "mongoose";
 import { printError } from "../utils/dev.js";
 import {
   RegisterResponse,
@@ -6,6 +7,7 @@ import {
   VerifyEmailResponse,
   LoginResponse,
   LoginRequestData,
+  VerifyEmailRequestData,
 } from "../types/data.js";
 import User from "../models/user.model.js";
 import { validateEmail, validateName } from "../utils/validators.js";
@@ -20,46 +22,58 @@ const OTP_EXPIRING_TIME = 10; // In minutes
 const JWT_SECRET = process.env.JWT_SECRET;
 const isProduction = process.env.NODE_END === "production";
 
+const tokenOptions: CookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "strict" : "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  domain: isProduction ? process.env.DOMAIN : undefined,
+};
+
 export const register = async (
-  req: Request,
-  res: Response,
-): Promise<Response<RegisterResponse>> => {
+  req: Request<{}, {}, RegisterRequestData>,
+  res: Response<RegisterResponse>,
+): Promise<void> => {
   try {
-    const { email, password, name }: RegisterRequestData = req.body;
+    const { email, password, name } = req.body;
 
     if (!email || !password || !name) {
       // Bad request - Data missing
-      return res.status(400).json({
+      res.status(400).json({
         success: true,
         message: "Fill required details",
       });
+      return;
     }
 
     // Checking for valid data
     if (!validateEmail(email)) {
       // Bad request - Invalid email
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Invalid email",
       });
+      return;
     }
 
     if (!validateName(name)) {
       // Bad request - Invalid name
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Invalid name",
       });
+      return;
     }
 
     // Checking if user is exist for this email
     let user = await User.findOne({ email });
     if (user) {
       // Conflict - User already exist
-      return res.status(409).json({
+      res.status(409).json({
         success: false,
         message: "User already exist with this email, login to continue",
       });
+      return;
     }
 
     const otp = generateOtp(6); // Generating OTP of length 6
@@ -88,51 +102,59 @@ export const register = async (
       html: verifyEmailTemplate(otp, name),
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       message: "Verification email sended",
-      userId: user?._id,
+      userId: user?._id as any as string,
     });
+    return;
   } catch (error: any) {
     printError(error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error?.message || "Failed to create your account",
     });
+    return;
   }
 };
 
 export const verifyEmail = async (
-  req: Request,
-  res: Response,
-): Promise<Response<VerifyEmailResponse>> => {
+  req: Request<{}, {}, VerifyEmailRequestData>,
+  res: Response<VerifyEmailResponse>,
+): Promise<void> => {
   try {
     const { otp, userId } = req.body;
 
-    const record = await EmailVerification.findOne({ userId });
+    // Let mongoose handle casting or silence TS by casting the filter to any
+    const record = await EmailVerification.findOne({
+      userId: new Types.ObjectId(userId),
+    } as any);
 
     // Checking if record is available
     if (!record) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "OTP not found",
       });
+      return;
     }
 
     if (record.expiresAt < new Date()) {
       // OTP expires
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Expired OTP, request for another one",
       });
+      return;
     }
 
     if ((record.attempts as number) > 5) {
       // Maximum 5 request allowed
-      return res.status(429).json({
+      res.status(429).json({
         success: false,
         message: "Too many attempts",
       });
+      return;
     }
 
     const isValid = await compareHashedString(otp, record.otpHash as string);
@@ -141,10 +163,11 @@ export const verifyEmail = async (
       record.attempts += 1 as any;
       await record.save();
 
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Invalid OTP",
       });
+      return;
     }
 
     // Updating user in database
@@ -154,19 +177,37 @@ export const verifyEmail = async (
     // Deleting email verification document
     await EmailVerification.deleteOne({ _id: record?._id });
 
-    return res.status(200).json({
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+      return;
+    }
+
+    const { passwordHash: _, ...userWithoutPassword } = user.toObject();
+
+    const token = jwt.sign(user?._id as any as string, JWT_SECRET as string); // Generating token
+
+    // Setting token to client
+    res.cookie("token", token, tokenOptions);
+
+    res.status(200).json({
       success: true,
       message: "Account verified successfully",
+      profile: userWithoutPassword,
     });
+    return;
   } catch (error: any) {
     printError(error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error?.message || "Failed to verify you email",
     });
+    return;
   }
 };
-
 export const login = async (
   req: Request<{}, {}, LoginRequestData>,
   res: Response<LoginResponse>,
@@ -203,20 +244,16 @@ export const login = async (
     }
 
     const token = jwt.sign(user._id, JWT_SECRET as string); // Generate token value
-    const tokenOptions: CookieOptions = {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "strict" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      domain: isProduction ? process.env.DOMAIN : undefined,
-    };
 
     // Seeting cookie to client
     res.cookie("token", token, tokenOptions);
 
+    const { passwordHash: _, ...userWithoutPassword } = user.toObject();
+
     res.status(200).json({
       success: false,
       message: "Logged in successfully",
+      profile: userWithoutPassword,
     });
     return;
   } catch (error: any) {

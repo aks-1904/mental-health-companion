@@ -1,20 +1,25 @@
-import { IUser } from "./schema.js";
+import { UserProfile } from "./schema.js";
 
 interface BaseAuthResponse {
   success: boolean;
   message: string;
 }
 
-export interface RegisterResponse {
+export interface RegisterResponse extends BaseAuthResponse {
   userId?: string;
 }
 
 export interface VerifyEmailResponse extends BaseAuthResponse {
-  profile?: IUser;
+  profile?: UserProfile;
 }
 
 export interface LoginResponse extends BaseAuthResponse {
-  profile?: IUser;
+  profile?: UserProfile;
+}
+
+export interface VerifyEmailRequestData {
+  otp: string;
+  userId: string;
 }
 
 export interface RegisterRequestData {
