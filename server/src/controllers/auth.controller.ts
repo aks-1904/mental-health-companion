@@ -208,6 +208,7 @@ export const verifyEmail = async (
     return;
   }
 };
+
 export const login = async (
   req: Request<{}, {}, LoginRequestData>,
   res: Response<LoginResponse>,

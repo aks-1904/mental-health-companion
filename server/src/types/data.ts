@@ -38,3 +38,12 @@ export type SendEmailParams = {
   subject: string;
   html: string;
 };
+
+interface BaseUserResponse {
+  success: boolean;
+  message?: string;
+}
+
+export interface GetProfileResponse extends BaseUserResponse {
+  profile?: UserProfile;
+}
