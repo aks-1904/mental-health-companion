@@ -8,6 +8,7 @@ import {
   LoginResponse,
   LoginRequestData,
   VerifyEmailRequestData,
+  BaseAuthResponse,
 } from "../types/data.js";
 import User from "../models/user.model.js";
 import { validateEmail, validateName } from "../utils/validators.js";
@@ -264,5 +265,24 @@ export const login = async (
       message: error?.message || "Unable to login to your account",
     });
     return;
+  }
+};
+
+export const logout = async (
+  _: Request,
+  res: Response<BaseAuthResponse>,
+): Promise<void> => {
+  try {
+    res.clearCookie("token");
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error: any) {
+    printError(error);
+    res.status(500).json({
+      success: false,
+      message: error?.message || "Some error occured",
+    });
   }
 };
