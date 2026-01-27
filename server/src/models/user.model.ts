@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { IUser } from "../types/schema.js";
+import { Gender, IUser } from "../types/schema.js";
 
 const userSchema = new mongoose.Schema<IUser>(
   {
@@ -23,8 +23,15 @@ const userSchema = new mongoose.Schema<IUser>(
       required: true,
       default: false,
     },
+    dob: {
+      type: Date,
+    },
+    gender: {
+      type: String,
+      enum: Gender,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const User = mongoose.model<IUser>("User", userSchema);
