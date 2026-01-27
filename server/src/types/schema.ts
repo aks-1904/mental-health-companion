@@ -1,10 +1,17 @@
 import { Schema } from "mongoose";
 
+export enum Gender {
+  MALE = "male",
+  FEMALE = "female",
+}
+
 export interface IUser {
   email: string;
   passwordHash: string;
   name: string;
   verified: boolean;
+  dob: Date;
+  gender: Gender;
 }
 
 // Removing passwordHash as an mandatory in UserProfile data

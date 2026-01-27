@@ -1,4 +1,4 @@
-import { UserProfile } from "./schema.js";
+import { Gender, UserProfile } from "./schema.js";
 
 interface BaseAuthResponse {
   success: boolean;
@@ -38,6 +38,12 @@ export type SendEmailParams = {
   subject: string;
   html: string;
 };
+
+export interface UpdateProfileRequest {
+  name: string;
+  dob: Date;
+  gender: Gender;
+} 
 
 interface BaseUserResponse {
   success: boolean;
