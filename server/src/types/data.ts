@@ -1,6 +1,6 @@
 import { UserProfile } from "./schema.js";
 
-interface BaseAuthResponse {
+export interface BaseAuthResponse {
   success: boolean;
   message: string;
 }
