@@ -1,63 +1,63 @@
-'use client'
+"use client";
 
-import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
-import Button from '@/components/ui/Button'
-import GlassCard from '@/components/ui/GlassCard'
-import Input from '@/components/ui/Input'
-import Link from 'next/link'
+import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
+import GlassCard from "@/components/ui/GlassCard";
+import Input from "@/components/ui/Input";
+import Link from "next/link";
 
 interface FormErrors {
-  email?: string
-  password?: string
+  email?: string;
+  password?: string;
 }
 
 export default function LoginPage() {
-  const router = useRouter()
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  })
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateEmail = (email: string): boolean => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  }
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
+    const newErrors: FormErrors = {};
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Please enter your email address'
+      newErrors.email = "Please enter your email address";
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Please enter a valid email address'
+      newErrors.email = "Please enter a valid email address";
     }
 
     if (!formData.password) {
-      newErrors.password = 'Please enter your password'
+      newErrors.password = "Please enter your password";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    
-    if (!validateForm()) return
+    e.preventDefault();
 
-    setIsSubmitting(true)
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      router.push(`/otp?email=${encodeURIComponent(formData.email)}`)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      router.push(`/otp?email=${encodeURIComponent(formData.email)}`);
     } catch (error) {
-      setErrors({ email: 'Unable to sign in. Please try again.' })
+      setErrors({ email: "Unable to sign in. Please try again." });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
@@ -80,7 +80,9 @@ export default function LoginPage() {
               type="email"
               placeholder="your.email@example.com"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               error={errors.email}
             />
 
@@ -90,7 +92,9 @@ export default function LoginPage() {
                 type="password"
                 placeholder="Enter your password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
                 error={errors.password}
               />
               <div className="text-right">
@@ -110,7 +114,7 @@ export default function LoginPage() {
               fullWidth
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Signing in...' : 'Sign In'}
+              {isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
           </form>
 
@@ -125,12 +129,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button
-            href="/register"
-            variant="outline"
-            size="lg"
-            fullWidth
-          >
+          <Button href="/register" variant="outline" size="lg" fullWidth>
             Create Account
           </Button>
         </GlassCard>
@@ -159,5 +158,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
