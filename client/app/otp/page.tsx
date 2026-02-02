@@ -2,10 +2,12 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Button from "@/components/ui/Button";
+import GlassCard from "@/components/ui/GlassCard";
+import Input from "@/components/ui/Input";
 
 interface FormErrors {
   otp?: string;
-  general?: string;
 }
 
 export default function OTPPage() {
@@ -16,29 +18,23 @@ export default function OTPPage() {
   const [otp, setOtp] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Timer state
   const [canResend, setCanResend] = useState(false);
   const [countdown, setCountdown] = useState(30);
 
-  // Countdown timer logic
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setCanResend(true);
-    }
-  }, [countdown]);
-
-  // Redirect if no email in URL
   useEffect(() => {
     if (!email) {
       router.push("/login");
     }
   }, [email, router]);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setCanResend(true);
+    }
+  }, [countdown]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -58,22 +54,17 @@ export default function OTPPage() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
     setErrors({});
 
     try {
-      // Simulate OTP verification (replace with actual endpoint)
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // On successful verification, redirect to dashboard
       router.push("/dashboard");
     } catch (error) {
       setErrors({
-        general: "The code you entered is incorrect. Please try again.",
+        otp: "The code you entered is incorrect. Please try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -88,132 +79,107 @@ export default function OTPPage() {
     setErrors({});
 
     try {
-      // Simulate resend API call (replace with actual endpoint)
       await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Show success feedback
-      setErrors({ general: "" }); // Clear errors to show success
     } catch (error) {
-      setErrors({
-        general: "Unable to resend code. Please try again in a moment.",
-      });
+      setErrors({ otp: "Unable to resend code. Please try again." });
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md space-y-8 animate-scale-in">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-popsicle mb-2">
-            Verify Your Email
+        <div className="text-center space-y-3">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-linear-to-br from-calm-400 to-calm-600 flex items-center justify-center mb-4">
+            <svg
+              className="w-8 h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-neutral-900">
+            Check Your Email
           </h1>
-          <p className="text-grey-blue-leaf mb-1">
-            We've sent a 6-digit code to
+          <p className="text-lg text-neutral-600">
+            We sent a verification code to
           </p>
-          <p className="text-deep-matte-grey font-medium">{email}</p>
+          <p className="text-calm-600 font-semibold">{email}</p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <GlassCard className="space-y-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* General Error/Success */}
-            {errors.general && (
-              <div className="p-4 bg-red-50 border-2 border-redline rounded-xl">
-                <p className="text-sm text-redline flex items-center gap-2">
-                  <span className="text-lg">⚠</span> {errors.general}
-                </p>
-              </div>
-            )}
+            <Input
+              label="Email Address"
+              type="email"
+              value={email}
+              readOnly
+              className="bg-neutral-100/50 cursor-not-allowed"
+            />
 
-            {/* Email Field (Read-only) */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-deep-matte-grey mb-2"
-              >
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                readOnly
-                className="w-full px-4 py-3 rounded-xl border-2 border-silver-fox
-                         bg-gray-50 text-grey-blue-leaf cursor-not-allowed"
-              />
-            </div>
+            <Input
+              label="Verification Code"
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="000000"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+              error={errors.otp}
+              className="text-center text-2xl font-semibold tracking-[0.5em]"
+            />
 
-            {/* OTP Field */}
-            <div>
-              <label
-                htmlFor="otp"
-                className="block text-sm font-medium text-deep-matte-grey mb-2"
-              >
-                Verification Code
-              </label>
-              <input
-                id="otp"
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-colors
-                  text-center text-2xl font-semibold tracking-widest
-                  ${
-                    errors.otp
-                      ? "border-redline bg-red-50"
-                      : "border-silver-fox focus:border-yellow-primary"
-                  }
-                  text-deep-matte-grey placeholder:text-grey-blue-leaf`}
-                placeholder="000000"
-              />
-              {errors.otp && (
-                <p className="mt-2 text-sm text-redline flex items-center gap-1">
-                  <span>⚠</span> {errors.otp}
-                </p>
-              )}
-            </div>
-
-            {/* Submit Button */}
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
               disabled={isSubmitting}
-              className="w-full bg-yellow-primary hover:bg-opacity-90 disabled:bg-silver-fox 
-                       disabled:cursor-not-allowed text-purple-shadow font-semibold 
-                       py-4 rounded-xl transition-all transform hover:scale-[1.02] 
-                       active:scale-[0.98] shadow-md"
             >
               {isSubmitting ? "Verifying..." : "Verify Code"}
-            </button>
+            </Button>
           </form>
 
-          {/* Resend Section */}
-          <div className="mt-6 text-center">
+          <div className="text-center space-y-4">
+            <div className="h-px bg-linear-to-r from-transparent via-neutral-300 to-transparent"></div>
+
             {canResend ? (
               <button
                 onClick={handleResend}
-                className="text-blue-popsicle font-medium hover:underline text-sm"
+                className="text-calm-600 hover:text-calm-700 font-semibold transition-colors"
               >
                 Resend verification code
               </button>
             ) : (
-              <p className="text-grey-blue-leaf text-sm">
-                You can request a new code in{" "}
-                <span className="font-semibold text-deep-matte-grey">
+              <p className="text-neutral-600">
+                Resend code in{" "}
+                <span className="font-semibold text-calm-600">
                   {countdown}s
                 </span>
               </p>
             )}
           </div>
+        </GlassCard>
 
-          {/* Help Text */}
-          <p className="mt-6 text-center text-grey-blue-leaf text-xs">
-            Didn't receive the code? Check your spam folder or{" "}
-            <a href="/login" className="text-blue-popsicle hover:underline">
+        {/* Help Text */}
+        <div className="text-center text-sm text-neutral-600 space-y-2">
+          <p>Didn't receive the code? Check your spam folder</p>
+          <p>
+            or{" "}
+            <button
+              onClick={() => router.push("/login")}
+              className="text-calm-600 hover:text-calm-700 font-medium transition-colors"
+            >
               try signing in again
-            </a>
+            </button>
           </p>
         </div>
       </div>
