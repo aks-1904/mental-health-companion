@@ -1,22 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import '../styles/theme.css'
+import Navigation from "@/components/ui/Navigation";
 
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: 'MindCare - Secure Authentication',
-  description: 'Safe, secure access to your mental health support',
+  title: "MindCare - Your Mental Wellness Journey",
+  description:
+    "Professional mental health support and resources for your wellbeing journey",
 };
 
 export default function RootLayout({
@@ -27,11 +23,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} antialiased min-h-screen bg-mesh-gradient`}
       >
-        <body className="bg-silver-fox min-h-screen">
-        {children}
-      </body>
+        <Navigation />
+        <main className="pt-20">{children}</main>
       </body>
     </html>
   );
