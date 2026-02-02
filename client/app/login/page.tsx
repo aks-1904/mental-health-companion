@@ -1,19 +1,19 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import Button from '@/components/ui/Button'
+import GlassCard from '@/components/ui/GlassCard'
+import Input from '@/components/ui/Input'
+import Link from 'next/link'
 
 interface FormErrors {
   email?: string
   password?: string
-  general?: string
 }
 
 export default function LoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const wasRegistered = searchParams.get('registered') === 'true'
-
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -22,8 +22,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   }
 
   const validateForm = (): boolean => {
@@ -46,23 +45,15 @@ export default function LoginPage() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    if (!validateForm()) {
-      return
-    }
+    if (!validateForm()) return
 
     setIsSubmitting(true)
-    setErrors({})
 
     try {
-      // Simulate API authentication (replace with actual endpoint)
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // On successful login, redirect to OTP page immediately
       router.push(`/otp?email=${encodeURIComponent(formData.email)}`)
     } catch (error) {
-      setErrors({ 
-        general: 'Unable to sign in. Please check your credentials and try again.' 
-      })
+      setErrors({ email: 'Unable to sign in. Please try again.' })
     } finally {
       setIsSubmitting(false)
     }
@@ -70,125 +61,101 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md space-y-8 animate-scale-in">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-popsicle mb-2">
+        <div className="text-center space-y-3">
+          <h1 className="text-4xl md:text-5xl font-bold text-neutral-900">
             Welcome Back
           </h1>
-          <p className="text-grey-blue-leaf">
-            Sign in to continue your journey
+          <p className="text-lg text-neutral-600">
+            Continue your wellness journey
           </p>
         </div>
 
-        {/* Success Message (if registered) */}
-        {wasRegistered && (
-          <div className="mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-xl">
-            <p className="text-sm text-green-800 text-center">
-              ✓ Account created successfully! Please sign in to continue.
-            </p>
-          </div>
-        )}
-
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <GlassCard className="space-y-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* General Error */}
-            {errors.general && (
-              <div className="p-4 bg-red-50 border-2 border-redline rounded-xl">
-                <p className="text-sm text-redline flex items-center gap-2">
-                  <span className="text-lg">⚠</span> {errors.general}
-                </p>
-              </div>
-            )}
+            <Input
+              label="Email Address"
+              type="email"
+              placeholder="your.email@example.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              error={errors.email}
+            />
 
-            {/* Email Field */}
-            <div>
-              <label 
-                htmlFor="email" 
-                className="block text-sm font-medium text-deep-matte-grey mb-2"
-              >
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-colors
-                  ${errors.email 
-                    ? 'border-redline bg-red-50' 
-                    : 'border-silver-fox focus:border-yellow-primary'
-                  }
-                  text-deep-matte-grey placeholder:text-grey-blue-leaf`}
-                placeholder="your.email@example.com"
-              />
-              {errors.email && (
-                <p className="mt-2 text-sm text-redline flex items-center gap-1">
-                  <span>⚠</span> {errors.email}
-                </p>
-              )}
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label 
-                  htmlFor="password" 
-                  className="block text-sm font-medium text-deep-matte-grey"
-                >
-                  Password
-                </label>
-                <a 
-                  href="/forgot-password" 
-                  className="text-sm text-blue-popsicle hover:underline"
-                >
-                  Forgot?
-                </a>
-              </div>
-              <input
-                id="password"
+            <div className="space-y-2">
+              <Input
+                label="Password"
                 type="password"
+                placeholder="Enter your password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-colors
-                  ${errors.password 
-                    ? 'border-redline bg-red-50' 
-                    : 'border-silver-fox focus:border-yellow-primary'
-                  }
-                  text-deep-matte-grey placeholder:text-grey-blue-leaf`}
-                placeholder="Enter your password"
+                error={errors.password}
               />
-              {errors.password && (
-                <p className="mt-2 text-sm text-redline flex items-center gap-1">
-                  <span>⚠</span> {errors.password}
-                </p>
-              )}
+              <div className="text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-calm-600 hover:text-calm-700 font-medium transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
-            {/* Submit Button */}
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
               disabled={isSubmitting}
-              className="w-full bg-yellow-primary hover:bg-opacity-90 disabled:bg-silver-fox 
-                       disabled:cursor-not-allowed text-purple-shadow font-semibold 
-                       py-4 rounded-xl transition-all transform hover:scale-[1.02] 
-                       active:scale-[0.98] shadow-md"
             >
               {isSubmitting ? 'Signing in...' : 'Sign In'}
-            </button>
+            </Button>
           </form>
 
-          {/* Register Link */}
-          <p className="mt-6 text-center text-grey-blue-leaf text-sm">
-            Don't have an account?{' '}
-            <a 
-              href="/register" 
-              className="text-blue-popsicle font-medium hover:underline"
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-neutral-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white/60 text-neutral-500">
+                New to MindCare?
+              </span>
+            </div>
+          </div>
+
+          <Button
+            href="/register"
+            variant="outline"
+            size="lg"
+            fullWidth
+          >
+            Create Account
+          </Button>
+        </GlassCard>
+
+        {/* Back to Home */}
+        <div className="text-center">
+          <Link
+            href="/"
+            className="text-neutral-600 hover:text-calm-600 font-medium transition-colors inline-flex items-center gap-2"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              Create one
-            </a>
-          </p>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Back to Home
+          </Link>
         </div>
       </div>
     </div>
