@@ -1,0 +1,217 @@
+"use client";
+
+import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
+import GlassCard from "@/components/ui/GlassCard";
+import Input from "@/components/ui/Input";
+import Link from "next/link";
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  dob?: string;
+}
+
+export default function RegisterPage() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    dob: "",
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const validateEmail = (email: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const validateDOB = (dob: string): boolean => {
+    const selectedDate = new Date(dob);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return selectedDate <= today;
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Please enter your name";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Please enter your email address";
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Please create a password";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password should be at least 8 characters";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords don't match yet";
+    }
+
+    if (!formData.dob) {
+      newErrors.dob = "Please select your date of birth";
+    } else if (!validateDOB(formData.dob)) {
+      newErrors.dob = "Please check your date of birth";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      router.push("/login?registered=true");
+    } catch (error) {
+      setErrors({ email: "Something went wrong. Please try again." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-2xl space-y-8 animate-scale-in">
+        {/* Header */}
+        <div className="text-center space-y-3">
+          <h1 className="text-4xl md:text-5xl font-bold text-neutral-900">
+            Begin Your Journey
+          </h1>
+          <p className="text-lg text-neutral-600">
+            Create your account to get personalized support
+          </p>
+        </div>
+
+        {/* Form Card */}
+        <GlassCard className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
+              label="Full Name"
+              type="text"
+              placeholder="e.g., Alex Johnson"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              error={errors.name}
+            />
+
+            <Input
+              label="Email Address"
+              type="email"
+              placeholder="your.email@example.com"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              error={errors.email}
+            />
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <Input
+                label="Password"
+                type="password"
+                placeholder="At least 8 characters"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                error={errors.password}
+              />
+
+              <Input
+                label="Confirm Password"
+                type="password"
+                placeholder="Re-enter password"
+                value={formData.confirmPassword}
+                onChange={(e) =>
+                  setFormData({ ...formData, confirmPassword: e.target.value })
+                }
+                error={errors.confirmPassword}
+              />
+            </div>
+
+            <Input
+              label="Date of Birth"
+              type="date"
+              value={formData.dob}
+              onChange={(e) =>
+                setFormData({ ...formData, dob: e.target.value })
+              }
+              error={errors.dob}
+            />
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating account..." : "Create Account"}
+            </Button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-neutral-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white/60 text-neutral-500">
+                Already have an account?
+              </span>
+            </div>
+          </div>
+
+          <Button href="/login" variant="outline" size="lg" fullWidth>
+            Sign In
+          </Button>
+        </GlassCard>
+
+        {/* Back to Home */}
+        <div className="text-center">
+          <Link
+            href="/"
+            className="text-neutral-600 hover:text-calm-600 font-medium transition-colors inline-flex items-center gap-2"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
