@@ -9,7 +9,6 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Mental health color palette
         primary: {
           50: '#fef9e7',
           100: '#fef3c7',
@@ -51,8 +50,6 @@ const config: Config = {
         },
       },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-calm': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         'mesh-gradient': `
           radial-gradient(at 40% 20%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
           radial-gradient(at 80% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
@@ -62,14 +59,9 @@ const config: Config = {
           radial-gradient(at 80% 100%, rgba(14, 165, 233, 0.15) 0px, transparent 50%)
         `,
       },
-      backdropBlur: {
-        xs: '2px',
-      },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
         'glass-hover': '0 12px 48px 0 rgba(31, 38, 135, 0.25)',
-        'neumorphic': '8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff',
-        'neumorphic-inset': 'inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
