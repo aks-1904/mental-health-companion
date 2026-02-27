@@ -11,7 +11,11 @@ import {
   BaseAuthResponse,
 } from "../types/data.js";
 import User from "../models/user.model.js";
-import { validateEmail, validateName } from "../utils/validators.js";
+import {
+  validateDOB,
+  validateEmail,
+  validateName,
+} from "../utils/validators.js";
 import { generateOtp } from "../utils/generators.js";
 import { compareHashedString, generateDate, hashText } from "../utils/util.js";
 import EmailVerification from "../models/emailVerfication.model.js";
@@ -36,7 +40,7 @@ export const register = async (
   res: Response<RegisterResponse>,
 ): Promise<void> => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, dob } = req.body;
 
     if (!email || !password || !name) {
       // Bad request - Data missing
@@ -66,6 +70,14 @@ export const register = async (
       return;
     }
 
+    if (dob && !validateDOB(dob)) {
+      // Bad request - Invalid DOB
+      res.status(400).json({
+        success: false,
+        message: "Invalid Date of birth",
+      });
+    }
+
     // Checking if user is exist for this email
     let user = await User.findOne({ email });
     if (user) {
@@ -82,12 +94,12 @@ export const register = async (
     const passwordHash = await hashText(password); // Hashing the password before saving to DB
     const otpExpiresDate = generateDate(new Date(), Number(OTP_EXPIRING_TIME)); // Generate Date after 10 minutes from now
 
+    // Making DB query
+    let userQuery: any = { email, passwordHash, name };
+    if (dob) userQuery.dob = dob;
+
     // Saving data in DB
-    user = await User.create({
-      email,
-      passwordHash,
-      name,
-    });
+    user = await User.create(userQuery);
 
     // Sending verification message
     await EmailVerification.deleteMany({ userId: user?._id as any }); // Deleting every other email verification document with same userId
