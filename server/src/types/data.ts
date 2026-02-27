@@ -26,6 +26,7 @@ export interface RegisterRequestData {
   email: string;
   password: string;
   name: string;
+  dob?: string;
 }
 
 export interface LoginRequestData {
