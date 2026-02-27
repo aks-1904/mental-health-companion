@@ -1,22 +1,13 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import GlassCard from "@/components/ui/GlassCard";
 import Input from "@/components/ui/Input";
 import Link from "next/link";
-
-interface FormErrors {
-  name?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-  dob?: string;
-}
+import useAuth from "@/hooks/useAuth";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -24,70 +15,13 @@ export default function RegisterPage() {
     confirmPassword: "",
     dob: "",
   });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const validateEmail = (email: string): boolean => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  const validateDOB = (dob: string): boolean => {
-    const selectedDate = new Date(dob);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return selectedDate <= today;
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Please enter your name";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Please enter your email address";
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Please create a password";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password should be at least 8 characters";
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords don't match yet";
-    }
-
-    if (!formData.dob) {
-      newErrors.dob = "Please select your date of birth";
-    } else if (!validateDOB(formData.dob)) {
-      newErrors.dob = "Please check your date of birth";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const { register, errors, loading } = useAuth();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push("/login?registered=true");
-    } catch (error) {
-      setErrors({ email: "Something went wrong. Please try again." });
-    } finally {
-      setIsSubmitting(false);
-    }
+    await register(formData);
   };
 
   return (
@@ -167,9 +101,9 @@ export default function RegisterPage() {
               variant="primary"
               size="lg"
               fullWidth
-              disabled={isSubmitting}
+              disabled={loading}
             >
-              {isSubmitting ? "Creating account..." : "Create Account"}
+              {loading ? "Creating account..." : "Create Account"}
             </Button>
           </form>
 
