@@ -138,9 +138,8 @@ export const verifyEmail = async (
   try {
     const { otp, userId } = req.body;
 
-    // Let mongoose handle casting or silence TS by casting the filter to any
     const record = await EmailVerification.findOne({
-      userId: new Types.ObjectId(userId),
+      userId,
     } as any);
 
     // Checking if record is available
@@ -200,8 +199,7 @@ export const verifyEmail = async (
     }
 
     const { passwordHash: _, ...userWithoutPassword } = user.toObject();
-
-    const token = jwt.sign(user?._id as any as string, JWT_SECRET as string); // Generating token
+    const token = jwt.sign({ userId: user?._id }, JWT_SECRET as string); // Generating token
 
     // Setting token to client
     res.cookie("token", token, tokenOptions);

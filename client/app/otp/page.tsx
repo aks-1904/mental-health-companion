@@ -5,27 +5,24 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
 import GlassCard from "@/components/ui/GlassCard";
 import Input from "@/components/ui/Input";
-
-interface FormErrors {
-  otp?: string;
-}
+import useAuth from "@/hooks/useAuth";
 
 export default function OTPPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") || "";
+  const userId = searchParams.get("user-id") || "";
 
   const [otp, setOtp] = useState("");
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [canResend, setCanResend] = useState(false);
   const [countdown, setCountdown] = useState(30);
 
+  const { verifyEmail, otpLoading: isSubmitting, otpErros: errors } = useAuth();
+
   useEffect(() => {
-    if (!email) {
-      router.push("/login");
+    if (!userId) {
+      router.replace("/login");
     }
-  }, [email, router]);
+  }, [userId, router]);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -36,38 +33,16 @@ export default function OTPPage() {
     }
   }, [countdown]);
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!otp.trim()) {
-      newErrors.otp = "Please enter the verification code";
-    } else if (otp.length !== 6) {
-      newErrors.otp = "Verification code should be 6 digits";
-    } else if (!/^\d+$/.test(otp)) {
-      newErrors.otp = "Verification code should only contain numbers";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    const res = await verifyEmail({ userId, otp });
+    if (res) {
+      // API request is success
+      setOtp("");
+      setCountdown(30);
 
-    setIsSubmitting(true);
-    setErrors({});
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push("/dashboard");
-    } catch (error) {
-      setErrors({
-        otp: "The code you entered is incorrect. Please try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
+      router.replace("/");
     }
   };
 
@@ -76,13 +51,8 @@ export default function OTPPage() {
 
     setCanResend(false);
     setCountdown(30);
-    setErrors({});
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    } catch (error) {
-      setErrors({ otp: "Unable to resend code. Please try again." });
-    }
+    // Resend OTP api call
   };
 
   return (
@@ -111,20 +81,11 @@ export default function OTPPage() {
           <p className="text-lg text-neutral-600">
             We sent a verification code to
           </p>
-          <p className="text-calm-600 font-semibold">{email}</p>
         </div>
 
         {/* Form Card */}
         <GlassCard className="space-y-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <Input
-              label="Email Address"
-              type="email"
-              value={email}
-              readOnly
-              className="bg-neutral-100/50 cursor-not-allowed"
-            />
-
             <Input
               label="Verification Code"
               type="text"
@@ -136,6 +97,10 @@ export default function OTPPage() {
               error={errors.otp}
               className="text-center text-2xl font-semibold tracking-[0.5em]"
             />
+
+            <p className="text-red-500 text-sm -mt-4 text-center">
+              {errors?.userId}
+            </p>
 
             <Button
               type="submit"

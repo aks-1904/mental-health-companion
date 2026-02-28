@@ -6,6 +6,7 @@ import GlassCard from "@/components/ui/GlassCard";
 import Input from "@/components/ui/Input";
 import Link from "next/link";
 import useAuth from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -15,13 +16,25 @@ export default function RegisterPage() {
     confirmPassword: "",
     dob: "",
   });
+  const router = useRouter();
 
-  const { register, errors, loading } = useAuth();
+  const { register, registerErrors, registerLoading } = useAuth();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    await register(formData);
+    const res = await register(formData);
+
+    if (res) {
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        dob: "",
+      });
+      router.replace(`/otp?user-id=${res}`);
+    }
   };
 
   return (
@@ -48,7 +61,7 @@ export default function RegisterPage() {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              error={errors.name}
+              error={registerErrors.name}
             />
 
             <Input
@@ -59,7 +72,7 @@ export default function RegisterPage() {
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              error={errors.email}
+              error={registerErrors.email}
             />
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -71,7 +84,7 @@ export default function RegisterPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                error={errors.password}
+                error={registerErrors.password}
               />
 
               <Input
@@ -82,7 +95,7 @@ export default function RegisterPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, confirmPassword: e.target.value })
                 }
-                error={errors.confirmPassword}
+                error={registerErrors.confirmPassword}
               />
             </div>
 
@@ -93,17 +106,21 @@ export default function RegisterPage() {
               onChange={(e) =>
                 setFormData({ ...formData, dob: e.target.value })
               }
-              error={errors.dob}
+              error={registerErrors.dob}
             />
+
+            <p className="text-sm text-red-500 text-center -mt-4">
+              {registerErrors?.message}
+            </p>
 
             <Button
               type="submit"
               variant="primary"
               size="lg"
               fullWidth
-              disabled={loading}
+              disabled={registerLoading}
             >
-              {loading ? "Creating account..." : "Create Account"}
+              {registerLoading ? "Creating account..." : "Create Account"}
             </Button>
           </form>
 
