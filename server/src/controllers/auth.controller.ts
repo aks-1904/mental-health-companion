@@ -9,6 +9,8 @@ import {
   LoginRequestData,
   VerifyEmailRequestData,
   BaseAuthResponse,
+  SendVerificationMailRequestData,
+  SendVerificationMailResponse,
 } from "../types/data.js";
 import User from "../models/user.model.js";
 import {
@@ -295,6 +297,54 @@ export const logout = async (
     res.status(500).json({
       success: false,
       message: error?.message || "Some error occured",
+    });
+  }
+};
+
+export const sendVerificationMail = async (
+  req: Request<{}, {}, SendVerificationMailRequestData>,
+  res: Response<SendVerificationMailResponse>,
+) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: "User not found with this email ID",
+      });
+      return;
+    }
+
+    const otp = generateOtp(6); // Generating OTP of length 6
+    const otpHash = await hashText(otp);
+    const otpExpiresDate = generateDate(new Date(), Number(OTP_EXPIRING_TIME)); // Generate Date after 10 minutes from now
+
+    await EmailVerification.deleteMany({ userId: user?._id as any });
+    await EmailVerification.create({
+      userId: user?._id as any,
+      otpHash,
+      expiresAt: otpExpiresDate,
+    });
+
+    await sendEmail({
+      to: email,
+      subject: "Verify your email",
+      html: verifyEmailTemplate(otp, user?.name as string),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Verification email sended",
+      userId: user?._id as any as string,
+    });
+    return;
+  } catch (error: any) {
+    const errorMsg = error?.message || "Cannot send verification mail";
+    printError(errorMsg);
+    res.status(500).json({
+      success: false,
+      message: errorMsg,
     });
   }
 };
