@@ -6,56 +6,24 @@ import Button from "@/components/ui/Button";
 import GlassCard from "@/components/ui/GlassCard";
 import Input from "@/components/ui/Input";
 import Link from "next/link";
-
-interface FormErrors {
-  email?: string;
-  password?: string;
-}
+import useAuth from "@/hooks/useAuth";
+import { LoginData } from "@/types/data";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<LoginData>({
     email: "",
     password: "",
   });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const validateEmail = (email: string): boolean => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Please enter your email address";
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Please enter your password";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const { login, loginErrors: errors, loginLoading: isSubmitting } = useAuth();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push(`/otp?email=${encodeURIComponent(formData.email)}`);
-    } catch (error) {
-      setErrors({ email: "Unable to sign in. Please try again." });
-    } finally {
-      setIsSubmitting(false);
+    const res = await login(formData);
+    if (res) {
+      router.replace("/");
     }
   };
 
@@ -116,6 +84,9 @@ export default function LoginPage() {
             >
               {isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
+            <p className="text-red-500 -mt-4 text-center text-sm">
+              {errors?.message}
+            </p>
           </form>
 
           <div className="relative">

@@ -1,8 +1,7 @@
-import { RegisterData, VerifyEmailData } from "@/types/data";
+import { LoginData, RegisterData, VerifyEmailData } from "@/types/data";
 import { printError } from "@/utils/dev";
-import { validateDOB, validateEmail, validateName } from "@/utils/validators";
+import { validateDOB, validateEmail } from "@/utils/validators";
 import axios from "axios";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export interface RegisterFormErrors {
@@ -19,6 +18,12 @@ export interface OTPFormErrors {
   userId?: string;
 }
 
+export interface LoginFormErrors {
+  email?: string;
+  password?: string;
+  message?: string;
+}
+
 const BACKEND_AUTH_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth`;
 
 const useAuth = () => {
@@ -28,6 +33,9 @@ const useAuth = () => {
 
   const [otpLoading, setOtpLoading] = useState<boolean>(false);
   const [otpErros, setOtpErrors] = useState<OTPFormErrors>({});
+
+  const [loginLoading, setLoginLoading] = useState<boolean>(false);
+  const [loginErrors, setLoginErrors] = useState<LoginFormErrors>({});
 
   // Validating the form data
   const validateRegisterForm = (data: RegisterData): boolean => {
@@ -83,6 +91,23 @@ const useAuth = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateLoginForm = (data: LoginData): boolean => {
+    const newErrors: LoginFormErrors = {};
+
+    if (!data.email.trim()) {
+      newErrors.email = "Please enter your email address";
+    } else if (!validateEmail(data.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!data.password) {
+      newErrors.password = "Please enter your password";
+    }
+
+    setLoginErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const register = async (data: RegisterData): Promise<boolean | string> => {
     try {
       // States updation
@@ -123,7 +148,7 @@ const useAuth = () => {
         error?.message ||
         "Internal server error, try again later";
 
-      setRegisterErrors({ message: errorMsg });
+      setRegisterErrors((prev) => ({ ...prev, message: errorMsg }));
       printError(error);
 
       return false;
@@ -160,7 +185,7 @@ const useAuth = () => {
         "Internal server error";
 
       printError(error);
-      setOtpErrors({ userId: errorMsg });
+      setOtpErrors((prev) => ({ ...prev, userId: errorMsg }));
 
       return false;
     } finally {
@@ -168,13 +193,51 @@ const useAuth = () => {
     }
   };
 
+  const login = async (data: LoginData): Promise<boolean> => {
+    try {
+      setLoginLoading(true);
+      if (!validateLoginForm(data)) {
+        return false;
+      }
+
+      const res = await axios.post(`${BACKEND_AUTH_URL}/login`, data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (res.data?.success) {
+        console.log(res.data);
+
+        return true;
+      }
+
+      return false;
+    } catch (error: any) {
+      let errorMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unable to login to your account";
+      printError(errorMsg);
+      setLoginErrors((prev) => ({ ...prev, message: errorMsg }));
+
+      return false;
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
   return {
     register,
     verifyEmail,
+    login,
+
     registerLoading,
     registerErrors,
     otpLoading,
     otpErros,
+    loginErrors,
+    loginLoading,
   };
 };
 

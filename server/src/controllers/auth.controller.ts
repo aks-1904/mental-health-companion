@@ -255,7 +255,7 @@ export const login = async (
       });
     }
 
-    const token = jwt.sign(user._id, JWT_SECRET as string); // Generate token value
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET as string); // Generate token value
 
     // Seeting cookie to client
     res.cookie("token", token, tokenOptions);
@@ -263,7 +263,7 @@ export const login = async (
     const { passwordHash: _, ...userWithoutPassword } = user.toObject();
 
     res.status(200).json({
-      success: false,
+      success: true,
       message: "Logged in successfully",
       profile: userWithoutPassword,
     });
