@@ -1,0 +1,31 @@
+/* Mental Health Auth Theme - Centralized Color System */
+:root {
+  --yellow-primary: #feda6a;
+  --silver-fox: #d4d4dc;
+  --deep-matte-grey: #393f4d;
+  --dark-slate: #1d1e22;
+  --blue-popsicle: #0f2862;
+  --redline: #9e363a;
+  --purple-shadow: #091f36;
+  --grey-blue-leaf: #4f5f76;
+}
+
+/* Base styles for calm, accessible forms */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth focus states for accessibility */
+input:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--yellow-primary);
+  outline-offset: 2px;
+}

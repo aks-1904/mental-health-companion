@@ -44,7 +44,7 @@ export interface UpdateProfileRequest {
   name: string;
   dob: Date;
   gender: Gender;
-} 
+}
 
 interface BaseUserResponse {
   success: boolean;
@@ -53,4 +53,12 @@ interface BaseUserResponse {
 
 export interface GetProfileResponse extends BaseUserResponse {
   profile?: UserProfile;
+}
+
+export interface SendVerificationMailRequestData {
+  email: string;
+}
+
+export interface SendVerificationMailResponse extends BaseAuthResponse {
+  userId?: string;
 }
