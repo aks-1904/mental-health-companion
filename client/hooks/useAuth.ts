@@ -24,6 +24,10 @@ export interface LoginFormErrors {
   message?: string;
 }
 
+export interface LogoutErrors {
+  message?: string;
+}
+
 const BACKEND_AUTH_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth`;
 
 const useAuth = () => {
@@ -36,6 +40,9 @@ const useAuth = () => {
 
   const [loginLoading, setLoginLoading] = useState<boolean>(false);
   const [loginErrors, setLoginErrors] = useState<LoginFormErrors>({});
+
+  const [logoutLoading, setLogoutLoading] = useState<boolean>(false);
+  const [logoutErrors, setLogoutErrors] = useState<LogoutErrors>({});
 
   // Validating the form data
   const validateRegisterForm = (data: RegisterData): boolean => {
@@ -196,6 +203,8 @@ const useAuth = () => {
   const login = async (data: LoginData): Promise<boolean> => {
     try {
       setLoginLoading(true);
+      setLoginErrors({});
+
       if (!validateLoginForm(data)) {
         return false;
       }
@@ -227,10 +236,35 @@ const useAuth = () => {
     }
   };
 
+  const logout = async (): Promise<boolean> => {
+    try {
+      setLogoutLoading(true);
+      setLogoutErrors({});
+
+      const res = await axios.get(`${BACKEND_AUTH_URL}/logout`);
+
+      if (res.data?.success) {
+        return true;
+      }
+
+      return false;
+    } catch (error: any) {
+      const errroMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Logging out failed";
+      printError(errroMsg);
+      return false;
+    } finally {
+      setLogoutLoading(false);
+    }
+  };
+
   return {
     register,
     verifyEmail,
     login,
+    logout,
 
     registerLoading,
     registerErrors,
@@ -238,6 +272,8 @@ const useAuth = () => {
     otpErros,
     loginErrors,
     loginLoading,
+    logoutLoading,
+    logoutErrors,
   };
 };
 
